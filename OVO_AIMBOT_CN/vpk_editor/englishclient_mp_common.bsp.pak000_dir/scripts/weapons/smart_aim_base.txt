@@ -1,0 +1,39 @@
+// 加入MP_BASE
+"red_crosshair_range" 							"150000"
+"smart_ammo_search_distance"  					"10000000"
+"smart_ammo_max_targeted_burst"					"12"
+"smart_ammo_targeting_time_min"					"0.00"
+"smart_ammo_targeting_time_max"					"0.00"
+"smart_ammo_targeting_time_min_npc"				"0.1"
+"smart_ammo_targeting_time_max_npc"				"0.1"
+
+// 加入Behavior内并覆盖已有参数
+"zoom_time_in"									"0.1"
+"zoom_time_out"   								"0.1"
+"smart_ammo_allow_search_while_firing"			"1"
+"smart_ammo_allow_ads_lock"						"1" // "0" is default
+"smart_ammo_search_npcs"						"0"
+"smart_ammo_search_players"						"1"
+"smart_ammo_search_projectiles"					"0"
+"smart_ammo_titans_block_los"					"0"
+"smart_ammo_track_cloaked_targets"				"1"
+"smart_ammo_targeting_time_modifier_projectile_owner"	"0.00"
+"smart_ammo_target_max_locks_normal"			"10"	// divide health by damage near
+"smart_ammo_target_npc_lock_factor"				"10"		// smart pistol does head shots at 2x damage
+"smart_ammo_new_target_delay"					"0.1"
+"smart_ammo_draw_acquisition_lines"				"0"
+"smart_ammo_hud_lock_style"						"pilot_pistol"
+"smart_ammo_hud_type" 							"smart_pistol"
+"smart_ammo_target_confirmed_sound"				"Weapon_SmartPistol_PilotLocked"
+"smart_ammo_target_confirming_sound"			"Weapon_SmartPistol_PilotLocked"
+"smart_ammo_looping_sound_acquiring"			"Weapon_SmartPistol_TargetLockingLoop"
+"smart_ammo_lock_type"							"small"
+"smart_ammo_alert_npc_fraction"					"0.1" 	// unaware since lock on fraction will not go above 1
+"smart_ammo_allow_hip_fire_lock"				"1"
+"smart_ammo_lock_effect_3p"						"P_smartpistol_lockon"
+"smart_ammo_lock_effect_attachment"				"muzzle_flash"
+"smart_ammo_player_targets_must_be_tracked"		"0"
+"smart_ammo_npc_targets_must_be_tracked"		"0"
+"smart_ammo_tracker_status_effects"				"0"
+"smart_ammo_tracked_targets_check_visibility"	"0"
+"threat_scope_enabled"			"1"

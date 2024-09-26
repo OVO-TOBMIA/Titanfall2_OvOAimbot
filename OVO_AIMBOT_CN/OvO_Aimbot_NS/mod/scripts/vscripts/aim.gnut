@@ -1,0 +1,749 @@
+/*
+
+	OvO-Aimbot!
+	
+*/
+
+global function aim_Init
+
+// 控制变量定义
+bool ai_enabled = true;                 // 启用自动瞄准: 推荐启用
+int ai_aim_rate = 500;                  // 瞄准更新频率: 推荐500
+int ai_aim_speed_search = 10000;        // 搜索瞄准速度: 推荐10000
+int ai_aim_speed_aim = 20;              // 逼近瞄准速度: 推荐20
+bool ai_tb = true;                      // 自动扳机: 推荐启用
+bool ai_pre_aim = true;					// 基于前一个时刻坐标的预瞄: 推荐启用，且配合自动扳机更优
+float ai_ass_power = 1.0;               // 自动触发的最大射速：推荐1.0
+bool auto_melee = true;                 // 自动近战: 推荐启用
+bool lock_bot = false;                  // 锁定机器人: 推荐禁用
+bool lock_titan = false;                // 锁定泰坦: 推荐禁用
+
+
+
+// 全局变量定义
+bool aimOn = false;
+entity currentTarget = null;            // 当前目标
+bool isAttacking = false;               // 是否在攻击
+bool isShooting = false;                // 射击按键状态
+float bulletSpeed = 100.0; // 根据实际情况调整速度
+
+// 敌人的坐标
+struct EnemyPosition {
+    float x,
+    float y,
+    float z
+};
+
+EnemyPosition lastEnemyPosition;
+
+// 定义 aimToggleOn 函数，在按下射击按钮时调用
+void function aimToggleOn(int buttonEnum)
+{
+    isShooting = true;
+}
+
+void function RegisterAllDamageCallbacks()
+{
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_arc_wave, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_dumbfire_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_flame_wall, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_flightcore_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_heat_shield, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_homing_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_laser_lite, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_leadwall, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_meteor, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_orbital_strike, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_particle_accelerator, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_predator_cannon, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_predator_cannon_siege, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_rocketeer_rocketstream, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_salvo_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_shoulder_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_sniper, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_sticky_40mm, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_stun_laser, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_tracker_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_vortex_shield, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_vortex_shield_ion, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16_shorty, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16_vanguard, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_alternator_smg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arc_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arc_trap, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena1, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena2, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena3, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_autopistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_car, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_defender, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dmr, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_doubletake, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dronebeam, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_droneplasma, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dronerocket, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_epg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_esaw, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_frag_drone, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_frag_grenade, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_g2, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_electric_smoke, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_emp, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_gravity, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_sonar, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_missile, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_turret, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_hemlok, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_hemlok_smg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_lmg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_lstar, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mastiff, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mega_turret, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mgl, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_pulse_lmg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_r97, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rocket_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rspn101, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rspn101_og, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_satchel, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_semipistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun_doublebarrel, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun_pistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_smart_pistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_smr, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_sniper, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_softball, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_spectre_spawner, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_super_spectre, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_thermite_grenade, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_turretplasma, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_turretplasma_mega, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_vinson, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_wingman, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_wingman_n, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803_bullet, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803_bullet_overcharged, aim_took);
+}
+
+// 在初始化函数中调用注册函数
+void function aim_Init()
+{
+    // 方便使用手柄或不同射击按键的玩家
+    for (int key = 0; key < 132; key++)
+    {
+        // 如果按键绑定了射击动作（+attack）
+        if (GetKeyBinding(key) == "+attack")
+        {
+            // 注册按键按下和释放的回调函数
+            RegisterButtonPressedCallback(key, aimToggleOn);
+            RegisterButtonReleasedCallback(key, aimToggleOff);
+        }
+		// 如果按键绑定用于解锁锁定
+        if (GetKeyBinding(key) == "+showscores")
+        {
+            // 注册按键按下和释放的回调函数
+            RegisterButtonPressedCallback(key, stopAimbot);
+        }
+    }
+	
+	// 初始化敌人坐标
+	last_Enemy_Position_Init();
+
+    // 添加玩家造成伤害的回调函数 aim_did
+    AddLocalPlayerDidDamageCallback(aim_did);
+
+    // 注册所有玩家受到伤害的回调函数
+    RegisterAllDamageCallbacks();
+
+    // 启动自动触发线程（感谢 Klemmbaustein 在 Thunderstore 上的帮助）
+    thread aim_TriggerBot();
+	
+	// 启动自瞄线程
+    thread aim_AimAssist();
+}
+
+void function last_Enemy_Position_Init()
+{
+	lastEnemyPosition.x = 0.0;
+	lastEnemyPosition.y = 0.0;
+	lastEnemyPosition.z = 0.0;		
+}
+
+// 定义 aim_did 函数，玩家造成伤害时触发
+void function aim_did(entity attacker, entity victim, vector unknownVec, int unknownInt)
+{
+    if(!isAttacking)
+    {
+        aimOn = true; // 启用自动瞄准
+        currentTarget = victim;
+        thread aimCheck_did(attacker, victim); // 启动 aimCheck_did 线程
+    }
+    else
+    {
+        thread aimCheck_took(victim, currentTarget); // 启动 aimCheck_took 线程
+    }
+}
+
+// 定义 aim_took 函数，玩家受到伤害时触发（优先级）
+void function aim_took(float damage, vector damageOrigin, int damageType, int damageSourceId, entity attacker)
+{
+    entity victim = GetLocalClientPlayer();
+    aimOn = true;
+    isAttacking = true;
+    currentTarget = attacker;
+    thread aimCheck_took(victim, attacker); // 启动 aimCheck_took 线程
+}
+
+// 定义 aimToggleOff 函数，释放射击按键时触发
+void function aimToggleOff(int buttonEnum)
+{
+    isShooting = false;
+    if(!isAttacking)
+    {
+        // 禁用自动瞄准
+        aimOn = false;
+        // 发送命令停止视角向右移动
+        GetLocalClientPlayer().ClientCommand("-right");
+        // 发送命令停止视角向左移动
+        GetLocalClientPlayer().ClientCommand("-left");
+    }
+}
+
+// 计算两个向量之间的距离
+float function VectorDistance(vector vec1, vector vec2)
+{
+    return sqrt(pow(vec1.x - vec2.x, 2) + pow(vec1.y - vec2.y, 2) + pow(vec1.z - vec2.z, 2));
+}
+
+// 计算目标视角的函数
+vector function calculateViewAngles(vector relativePosition)
+{
+	// 如果是首次，直接返回
+    if ((lastEnemyPosition.x == 0 && lastEnemyPosition.y == 0 && lastEnemyPosition.z == 0)  || (!ai_pre_aim) ) 
+	{
+		print("Normal-Aim");
+        lastEnemyPosition.x = relativePosition.x;
+		lastEnemyPosition.y = relativePosition.y;
+		lastEnemyPosition.z = relativePosition.z;
+		// 分解位置向量的 x, y, z 分量
+		float posX = relativePosition.x;
+		float posY = relativePosition.y;
+		float posZ = relativePosition.z;
+		// 计算平面距离
+		float triangleSideC = sqrt(pow(posX, 2) + pow(posY, 2));
+		// 计算视角（弧度）
+		float viewAngleForwardYaw = atan(posZ / triangleSideC) * (-1);
+		float viewAngleForwardPitch = atan(posY / posX);
+	
+		// 转换为度数
+		float yawDegrees = viewAngleForwardYaw * 57.2957795;
+		float pitchDegrees = viewAngleForwardPitch * 57.2957795;
+	
+		// 如果目标在左侧，调整角度
+		if (posX < 0)
+		{
+			if (pitchDegrees < 90 && pitchDegrees >= 0)
+			{
+				pitchDegrees = pitchDegrees - 180;
+			}
+			if (pitchDegrees > -90 && pitchDegrees < 0)
+			{
+				pitchDegrees = pitchDegrees + 180;
+			}
+		}
+		
+		vector temp;
+		temp.x = yawDegrees;
+		temp.y = pitchDegrees;
+		temp.z = 0;
+	
+		return temp;
+    }
+	else
+	{
+		print("Pre-Aim\n");
+		// 计算敌人与上一秒位置的偏差
+		float deltaX = relativePosition.x - lastEnemyPosition.x;
+		float deltaY = relativePosition.y - lastEnemyPosition.y;
+		print("DX:" + deltaX);
+		print("DY:" + deltaY);
+	
+		// 计算纵向距离
+		float verticalDistance = relativePosition.x;
+		print("VD:" + verticalDistance);
+	
+		// 计算时间（纵向距离 / 子弹速度）
+		float time = fabs(verticalDistance / bulletSpeed);
+		print("Time:" + time);
+		float refreshTime = (1.0 / float(ai_aim_rate));
+	
+		// 计算下一瞬间可能的坐标
+		float futureX = relativePosition.x + (deltaX);
+		float futureY = relativePosition.y + (deltaY);
+		float futureZ = relativePosition.z; // 假设 Z 轴坐标保持不变
+		
+		print("Future:" + futureX + " | " + futureY + " | ");
+		print("Current:" + relativePosition.x + " | " + relativePosition.y + " | ");
+	
+		// 计算平面距离
+		float triangleSideC = sqrt(futureX * futureX + futureY * futureY);
+	
+		// 计算视角（弧度）
+		float viewAngleForwardYaw = atan(futureZ / triangleSideC) * (-1);
+		float viewAngleForwardPitch = atan(futureY / futureX);
+	
+		// 转换为度数
+		float yawDegrees = viewAngleForwardYaw * 57.2957795;
+		float pitchDegrees = viewAngleForwardPitch * 57.2957795;
+	
+		// 如果目标在左侧，调整角度
+		if (futureX < 0) {
+			if (pitchDegrees < 90 && pitchDegrees >= 0) {
+				pitchDegrees -= 180;
+			}
+			if (pitchDegrees > -90 && pitchDegrees < 0) {
+				pitchDegrees += 180;
+			}
+		}
+	
+		// 更新敌人当前坐标为上一秒坐标
+		lastEnemyPosition.x = relativePosition.x;
+		lastEnemyPosition.y = relativePosition.y;
+		lastEnemyPosition.z = relativePosition.z;
+	
+		vector temp;
+		temp.x = yawDegrees;
+		temp.y = pitchDegrees;
+		temp.z = 0;
+	
+		return temp;
+	}
+	
+	float yawDegrees = 0.0;
+	float pitchDegrees = 0.0;
+	vector temp;
+	temp.x = yawDegrees;
+	temp.y = pitchDegrees;
+	temp.z = 0;
+	
+	return temp;
+}
+
+// 应用视角调整命令的函数
+void function applyViewAngleCommands(float attackerYaw, float attackerPitch, float targetYaw, float targetPitch, int yawSpeed, int pitchSpeed)
+{
+    // 设置移动速度
+    GetLocalClientPlayer().ClientCommand("cl_yawspeed " + yawSpeed);
+    GetLocalClientPlayer().ClientCommand("cl_pitchspeed " + pitchSpeed);
+
+    // 视角移动逻辑
+    if (attackerPitch < targetPitch)
+    {
+        GetLocalClientPlayer().ClientCommand("-right");
+        GetLocalClientPlayer().ClientCommand("+left");
+    }
+    else if (attackerPitch > targetPitch)
+    {
+        GetLocalClientPlayer().ClientCommand("-left");
+        GetLocalClientPlayer().ClientCommand("+right");
+    }
+
+    if (attackerYaw < targetYaw)
+    {
+        GetLocalClientPlayer().ClientCommand("-lookup");
+        GetLocalClientPlayer().ClientCommand("+lookdown");
+    }
+    else if (attackerYaw > targetYaw)
+    {
+        GetLocalClientPlayer().ClientCommand("-lookdown");
+        GetLocalClientPlayer().ClientCommand("+lookup");
+    }
+}
+
+
+// 更新后的 aimCheck_did 函数
+void function aimCheck_did(entity attacker, entity victim)
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // 计算公比 q
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // 当自动瞄准启用且 ai_enabled 为 true 时循环
+    while (aimOn && ai_enabled)
+    {
+        aimOn = true;
+        currentTarget = victim;
+
+        if(!IsValid(attacker) || !IsValid(victim))
+        {
+            continue;
+        }
+
+        // 计算受害者相对于攻击者的位置向量
+        vector relativePosition = victim.GetOrigin() - attacker.GetOrigin();
+        vector targetAngles = calculateViewAngles(relativePosition);
+
+        // 获取当前视角
+        float attackerYaw = attacker.EyeAngles().x;
+        float attackerPitch = attacker.EyeAngles().y;
+
+        // 计算视角差异
+        float yawDifference = fabs(attackerPitch - targetAngles.y);
+        float pitchDifference = fabs(attackerYaw - targetAngles.x);
+
+        // 根据差异调整速度
+        if (yawDifference > 20.0)
+        {
+            currentYawSpeed = ai_aim_speed_search;
+            currentPitchSpeed = ai_aim_speed_search;
+        }
+        else if (yawDifference >= 1.0)
+        {
+            currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+            currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+        }
+        else
+        {
+            currentYawSpeed = 10;
+            currentPitchSpeed = 10;
+        }
+
+        // 调用应用视角调整命令的函数
+        applyViewAngleCommands(attackerYaw, attackerPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+
+        // 结束条件判断
+        if (!IsValid(victim) || attacker != GetLocalClientPlayer() || GetHealthFrac(victim) <= 0.0 || GetHealthFrac(attacker) <= 0.0 || attacker == victim || (victim.IsPlayer() == false && !lock_bot) || (victim.IsHuman() == false && !lock_titan))
+        {
+            aimOn = false;
+            currentTarget = null;
+            GetLocalClientPlayer().ClientCommand("-right");
+            GetLocalClientPlayer().ClientCommand("-left");
+            GetLocalClientPlayer().ClientCommand("-lookup");
+            GetLocalClientPlayer().ClientCommand("-lookdown");
+			// 初始化敌人坐标
+			last_Enemy_Position_Init();
+            break;
+        }
+
+        // 在继续循环前等待一定时间
+        wait(1 / ai_aim_rate);
+    }
+}
+
+// 更新后的 aimCheck_took 函数
+void function aimCheck_took(entity victim, entity attacker)
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // 计算公比 q
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // 当自动瞄准启用且 ai_enabled 为 true 时循环
+    while (aimOn && ai_enabled)
+    {
+        aimOn = true;
+        isAttacking = true;
+        currentTarget = attacker;
+
+        if(!IsValid(attacker) || !IsValid(victim))
+        {
+            continue;
+        }
+
+        // 计算攻击者相对于受害者的位置向量
+        vector relativePosition = attacker.GetOrigin() - victim.GetOrigin();
+        vector targetAngles = calculateViewAngles(relativePosition);
+
+        // 获取当前视角
+        float victimYaw = victim.EyeAngles().x;
+        float victimPitch = victim.EyeAngles().y;
+
+        // 计算视角差异
+        float yawDifference = fabs(victimPitch - targetAngles.y);
+        float pitchDifference = fabs(victimYaw - targetAngles.x);
+
+        // 根据差异调整速度
+        if (yawDifference > 20.0)
+        {
+            currentYawSpeed = ai_aim_speed_search;
+            currentPitchSpeed = ai_aim_speed_search;
+        }
+        else if (yawDifference >= 1.0)
+        {
+            currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+            currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+        }
+        else
+        {
+            currentYawSpeed = 10;
+            currentPitchSpeed = 10;
+        }
+
+        // 调用应用视角调整命令的函数
+        applyViewAngleCommands(victimYaw, victimPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+
+        // 结束条件判断
+        if (!IsValid(attacker) || GetHealthFrac(victim) <= 0.0 || GetHealthFrac(attacker) <= 0.0 || attacker == victim || (attacker.IsPlayer() == false && !lock_bot) || (attacker.IsHuman() == false && !lock_titan))
+        {
+            print("End of Aimbot");
+            aimOn = false;
+            isAttacking = false;
+            currentTarget = null;
+            GetLocalClientPlayer().ClientCommand("-right");
+            GetLocalClientPlayer().ClientCommand("-left");
+            GetLocalClientPlayer().ClientCommand("-lookup");
+            GetLocalClientPlayer().ClientCommand("-lookdown");
+			// 初始化敌人坐标
+			last_Enemy_Position_Init();
+            break;
+        }
+
+        // 在继续循环前等待一定时间
+        wait(1 / ai_aim_rate);
+    }
+}
+
+// 定义 aim_TriggerBot 函数，用于自动射击
+void function aim_TriggerBot()
+{
+    float meleeDistanceThreshold = 100; // 定义近战攻击的距离阈值（以米为单位）
+
+    // 无限循环
+    while (true)
+    {
+        // 每帧等待
+        WaitFrame();
+        // 如果本地玩家存在
+        if (GetLocalClientPlayer() != null)
+        {
+            // 获取玩家视角的追踪结果
+            TraceResults results = GetViewTrace(GetLocalClientPlayer());
+
+            // 如果击中的实体有效且为人类
+            if (IsValid(results.hitEnt) && results.hitEnt.IsHuman())
+            {
+                // 如果击中的是队友，跳过本次循环
+                if (results.hitEnt.GetTeam() == GetLocalClientPlayer().GetTeam())
+                {
+                    continue;
+                }
+
+                // 计算本地玩家和击中实体之间的距离
+                vector localPlayerPosition = GetLocalClientPlayer().GetOrigin();
+                vector targetPosition = results.hitEnt.GetOrigin();
+                float distance = VectorDistance(localPlayerPosition, targetPosition);
+
+                if (distance <= meleeDistanceThreshold && auto_melee)
+                {
+                    // 如果距离小于阈值，执行近战攻击
+                    GetLocalClientPlayer().ClientCommand("+melee");
+                    wait(0.0);
+                    GetLocalClientPlayer().ClientCommand("-melee");
+                }
+                else if (ai_tb && !isShooting)
+                {
+                    // 否则，执行射击
+                    GetLocalClientPlayer().ClientCommand("+attack");
+                    wait(0.0);
+                    GetLocalClientPlayer().ClientCommand("-attack");
+                }
+                else
+                {
+                    ;
+                }
+
+                // 如果本地玩家存在且当前没有武器，跳过本次循环
+                if (IsValid(GetLocalClientPlayer()) && GetLocalClientPlayer().GetActiveWeapon() == null)
+                {
+                    continue;
+                }
+
+                // 如果 ai_ass_power 小于等于 0.0 或大于 1.0，跳过本次循环
+                if (ai_ass_power <= 0.0 || ai_ass_power > 1.0)
+                {
+                    continue;
+                }
+
+                // 如果 ai_ass_power 在 0.0 和 1.0 之间
+                if (ai_ass_power < 1.0 && ai_ass_power > 0.0)
+                {
+                    // 如果本地玩家存在且当前有武器
+                    if (IsValid(GetLocalClientPlayer()) && GetLocalClientPlayer().GetActiveWeapon() != null)
+                    {
+                        // 根据武器的最大射速和 ai_ass_power 确定射击间隔
+                        wait((1 / GetLocalClientPlayer().GetActiveWeapon().GetWeaponSettingFloat(eWeaponVar.fire_rate)) * (1 / ai_ass_power));
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 定义 aimToggleOff 函数，释放射击按键时触发
+void function stopAimbot(int buttonEnum)
+{
+    currentTarget = null;
+    aimOn = false;
+
+    // 停止所有视角移动
+    GetLocalClientPlayer().ClientCommand("-right");
+    GetLocalClientPlayer().ClientCommand("-left");
+    GetLocalClientPlayer().ClientCommand("-lookup");
+    GetLocalClientPlayer().ClientCommand("-lookdown");
+	// 初始化敌人坐标
+	last_Enemy_Position_Init();
+}
+
+void function aim_AimAssist()
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // 计算公比 q，用于调整速度
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // 无限循环用于检测准星扫过的敌人
+    while (true)
+    {
+        // 每帧等待
+        WaitFrame();
+        // 如果本地玩家存在
+        if (GetLocalClientPlayer() != null)
+        {
+            // 如果当前的目标无效或已死亡，才进行新的追踪
+            if (!IsValid(currentTarget) || GetHealthFrac(currentTarget) <= 0.0)
+            {
+                // 获取玩家准星方向的追踪结果
+                TraceResults results = GetViewTrace(GetLocalClientPlayer());
+
+                // 检查命中的实体是否有效且是敌人
+                if (IsValid(results.hitEnt) && results.hitEnt.GetTeam() != GetLocalClientPlayer().GetTeam())
+                {
+					entity currentEntity = results.hitEnt;
+                    // 检查目标类型，是否为机器人或泰坦
+                    if ((currentEntity.IsPlayer() == false && !lock_bot) || (currentEntity.IsHuman() == false && !lock_titan))
+                    {
+                        // 如果当前目标不符合锁定条件，跳过本次循环
+                        currentTarget = null;
+                        aimOn = false;
+
+                        // 停止所有视角移动
+                        GetLocalClientPlayer().ClientCommand("-right");
+                        GetLocalClientPlayer().ClientCommand("-left");
+                        GetLocalClientPlayer().ClientCommand("-lookup");
+                        GetLocalClientPlayer().ClientCommand("-lookdown");
+						// 初始化敌人坐标
+						last_Enemy_Position_Init();
+
+                        // 跳过追踪逻辑，直接等待
+                        wait(1 / ai_aim_rate);
+                        continue;
+                    }
+
+                    // 如果符合条件，更新当前目标
+                    currentTarget = currentEntity;
+                }
+                else
+                {
+                    // 如果没有找到有效目标，清空目标并跳过当前帧
+                    currentTarget = null;
+                    aimOn = false;
+					
+					// 停止所有视角移动
+                    GetLocalClientPlayer().ClientCommand("-right");
+                    GetLocalClientPlayer().ClientCommand("-left");
+                    GetLocalClientPlayer().ClientCommand("-lookup");
+                    GetLocalClientPlayer().ClientCommand("-lookdown");
+					// 初始化敌人坐标
+					last_Enemy_Position_Init();
+					wait(1 / ai_aim_rate);
+                    continue;
+                }
+            }
+
+            // 如果当前有有效的目标
+            if (IsValid(currentTarget))
+            {
+                print("Tracking");
+
+                // 获取玩家和目标的位置
+                vector playerPosition = GetLocalClientPlayer().GetOrigin();
+                vector targetPosition = currentTarget.GetOrigin();
+
+                // 打印玩家和目标的位置
+                //print("Player Position: (" + playerPosition.x + ", " + playerPosition.y + ", " + playerPosition.z + ")");
+                //print("Target Position: (" + targetPosition.x + ", " + targetPosition.y + ", " + targetPosition.z + ")");
+
+                if (targetPosition.x != 0 || targetPosition.y != 0 || targetPosition.z != 0)
+                {
+                    // 计算玩家与目标之间的相对位置
+                    vector relativePosition = targetPosition - playerPosition;
+                    vector targetAngles = calculateViewAngles(relativePosition);
+
+                    // 获取当前视角
+                    float playerYaw = GetLocalClientPlayer().EyeAngles().x;
+                    float playerPitch = GetLocalClientPlayer().EyeAngles().y;
+
+                    // 计算视角差异
+                    float yawDifference = fabs(playerPitch - targetAngles.y);
+                    float pitchDifference = fabs(playerYaw - targetAngles.x);
+
+                    // 打印视角信息
+                    //print("Player Yaw: " + playerYaw + ", Player Pitch: " + playerPitch);
+                    //print("Target Yaw: " + targetAngles.x + ", Target Pitch: " + targetAngles.y);
+
+                    // 根据视角差异调整速度
+                    if (yawDifference > 20.0)
+                    {
+                        currentYawSpeed = ai_aim_speed_search;
+                        currentPitchSpeed = ai_aim_speed_search;
+                    }
+                    else if (yawDifference >= 1.0)
+                    {
+                        currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+                        currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+                    }
+                    else
+                    {
+                        currentYawSpeed = 10;
+                        currentPitchSpeed = 10;
+                    }
+
+                    // 调用应用视角调整命令的函数
+                    applyViewAngleCommands(playerYaw, playerPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+                }
+            }
+            else
+            {
+                // 如果没有有效的目标，重置状态
+                aimOn = false;
+                currentTarget = null;
+
+                // 停止所有视角移动
+                //print("Stop Assist Tracking");
+                GetLocalClientPlayer().ClientCommand("-right");
+                GetLocalClientPlayer().ClientCommand("-left");
+                GetLocalClientPlayer().ClientCommand("-lookup");
+                GetLocalClientPlayer().ClientCommand("-lookdown");
+				// 初始化敌人坐标
+				last_Enemy_Position_Init();
+            }
+			
+            // 在继续循环前等待一定时间
+            wait(1 / ai_aim_rate);
+        }
+    }
+}
+
+/*
+
+	OvO-Aimbot!
+	
+*/
