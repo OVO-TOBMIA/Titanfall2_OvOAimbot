@@ -1,0 +1,741 @@
+/*
+
+	OvO-Aimbot!
+	
+*/
+
+global function aim_Init
+
+// Control variable definitions
+bool ai_enabled = true;                 // Enable auto-aim: Recommended to enable
+int ai_aim_rate = 500;                  // Aim update frequency: Recommended 500
+int ai_aim_speed_search = 10000;        // Search aim speed: Recommended 10000
+int ai_aim_speed_aim = 20;              // Approaching aim speed: Recommended 20
+bool ai_tb = true;                      // Auto-trigger: Recommended to enable
+bool ai_pre_aim = true;                 // Pre-aim based on previous coordinates: Recommended to enable, works better with auto-trigger
+float ai_ass_power = 1.0;               // Maximum firing rate for auto-trigger: Recommended 1.0
+bool auto_melee = true;                 // Auto melee: Recommended to enable
+bool lock_bot = false;                  // Lock on bots: Recommended to disable
+bool lock_titan = false;                // Lock on titans: Recommended to disable
+
+// Global variable definitions
+bool aimOn = false;
+entity currentTarget = null;            // Current target
+bool isAttacking = false;               // Is attacking
+bool isShooting = false;                // Shooting button state
+float bulletSpeed = 100.0;              // Adjust speed according to actual situation
+
+// Enemy's coordinates
+struct EnemyPosition {
+    float x,
+    float y,
+    float z
+};
+
+EnemyPosition lastEnemyPosition;
+
+// Define function aimToggleOn, called when the shoot button is pressed
+void function aimToggleOn(int buttonEnum)
+{
+    isShooting = true;
+}
+
+void function RegisterAllDamageCallbacks()
+{
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_arc_wave, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_dumbfire_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_flame_wall, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_flightcore_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_heat_shield, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_homing_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_laser_lite, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_leadwall, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_meteor, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_orbital_strike, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_particle_accelerator, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_predator_cannon, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_predator_cannon_siege, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_rocketeer_rocketstream, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_salvo_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_shoulder_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_sniper, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_sticky_40mm, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_stun_laser, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_tracker_rockets, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_vortex_shield, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_vortex_shield_ion, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16_shorty, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_titanweapon_xo16_vanguard, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_alternator_smg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arc_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arc_trap, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena1, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena2, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_arena3, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_autopistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_car, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_defender, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dmr, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_doubletake, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dronebeam, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_droneplasma, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_dronerocket, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_epg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_esaw, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_frag_drone, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_frag_grenade, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_g2, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_electric_smoke, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_emp, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_gravity, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_grenade_sonar, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_missile, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_gunship_turret, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_hemlok, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_hemlok_smg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_lmg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_lstar, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mastiff, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mega_turret, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_mgl, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_pulse_lmg, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_r97, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rocket_launcher, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rspn101, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_rspn101_og, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_satchel, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_semipistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun_doublebarrel, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_shotgun_pistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_smart_pistol, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_smr, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_sniper, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_softball, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_spectre_spawner, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_super_spectre, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_thermite_grenade, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_turretplasma, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_turretplasma_mega, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_vinson, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_wingman, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_wingman_n, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803_bullet, aim_took);
+    AddLocalPlayerTookDamageCallback(eDamageSourceId.mp_weapon_yh803_bullet_overcharged, aim_took);
+}
+
+// Call registration function in the initialization function
+void function aim_Init()
+{
+    // For players using controllers or different shooting buttons
+    for (int key = 0; key < 132; key++)
+    {
+        // If the key is bound to the shoot action (+attack)
+        if (GetKeyBinding(key) == "+attack")
+        {
+            // Register callback functions for key press and release
+            RegisterButtonPressedCallback(key, aimToggleOn);
+            RegisterButtonReleasedCallback(key, aimToggleOff);
+        }
+        // If the key is bound to unlock the lock
+        if (GetKeyBinding(key) == "+showscores")
+        {
+            // Register callback function for key press
+            RegisterButtonPressedCallback(key, stopAimbot);
+        }
+    }
+    
+    // Initialize enemy coordinates
+    last_Enemy_Position_Init();
+
+    // Add callback function for local player causing damage
+    AddLocalPlayerDidDamageCallback(aim_did);
+
+    // Register callback functions for all players receiving damage
+    RegisterAllDamageCallbacks();
+
+    // Start the auto-trigger thread (thanks to Klemmbaustein for the help on Thunderstore)
+    thread aim_TriggerBot();
+    
+    // Start the aim assist thread
+    thread aim_AimAssist();
+}
+
+void function last_Enemy_Position_Init()
+{
+    lastEnemyPosition.x = 0.0;
+    lastEnemyPosition.y = 0.0;
+    lastEnemyPosition.z = 0.0;       
+}
+
+// Define the aim_did function, triggered when the player causes damage
+void function aim_did(entity attacker, entity victim, vector unknownVec, int unknownInt)
+{
+    if(!isAttacking)
+    {
+        aimOn = true; // Enable auto-aim
+        currentTarget = victim;
+        thread aimCheck_did(attacker, victim); // Start aimCheck_did thread
+    }
+    else
+    {
+        thread aimCheck_took(victim, currentTarget); // Start aimCheck_took thread
+    }
+}
+
+// Define the aim_took function, triggered when the player receives damage (priority)
+void function aim_took(float damage, vector damageOrigin, int damageType, int damageSourceId, entity attacker)
+{
+    entity victim = GetLocalClientPlayer();
+    aimOn = true;
+    isAttacking = true;
+    currentTarget = attacker;
+    thread aimCheck_took(victim, attacker); // Start aimCheck_took thread
+}
+
+// Define the aimToggleOff function, triggered when the shooting key is released
+void function aimToggleOff(int buttonEnum)
+{
+    isShooting = false;
+    if(!isAttacking)
+    {
+        // Disable auto-aim
+        aimOn = false;
+        // Send command to stop moving the view to the right
+        GetLocalClientPlayer().ClientCommand("-right");
+        // Send command to stop moving the view to the left
+        GetLocalClientPlayer().ClientCommand("-left");
+    }
+}
+
+// Calculate the distance between two vectors
+float function VectorDistance(vector vec1, vector vec2)
+{
+    return sqrt(pow(vec1.x - vec2.x, 2) + pow(vec1.y - vec2.y, 2) + pow(vec1.z - vec2.z, 2));
+}
+
+// Function to calculate the target view angles
+vector function calculateViewAngles(vector relativePosition)
+{
+    // If it's the first time, return directly
+    if ((lastEnemyPosition.x == 0 && lastEnemyPosition.y == 0 && lastEnemyPosition.z == 0) || (!ai_pre_aim)) 
+    {
+        print("Normal-Aim");
+        lastEnemyPosition.x = relativePosition.x;
+        lastEnemyPosition.y = relativePosition.y;
+        lastEnemyPosition.z = relativePosition.z;
+        // Decompose the position vector into x, y, z components
+        float posX = relativePosition.x;
+        float posY = relativePosition.y;
+        float posZ = relativePosition.z;
+        // Calculate planar distance
+        float triangleSideC = sqrt(pow(posX, 2) + pow(posY, 2));
+        // Calculate view angle (radians)
+        float viewAngleForwardYaw = atan(posZ / triangleSideC) * (-1);
+        float viewAngleForwardPitch = atan(posY / posX);
+    
+        // Convert to degrees
+        float yawDegrees = viewAngleForwardYaw * 57.2957795;
+        float pitchDegrees = viewAngleForwardPitch * 57.2957795;
+    
+        // Adjust angle if the target is on the left
+        if (posX < 0)
+        {
+            if (pitchDegrees < 90 && pitchDegrees >= 0)
+            {
+                pitchDegrees = pitchDegrees - 180;
+            }
+            if (pitchDegrees > -90 && pitchDegrees < 0)
+            {
+                pitchDegrees = pitchDegrees + 180;
+            }
+        }
+        
+        vector temp;
+        temp.x = yawDegrees;
+        temp.y = pitchDegrees;
+        temp.z = 0;
+    
+        return temp;
+    }
+    else
+    {
+        print("Pre-Aim\n");
+        // Calculate the deviation from the previous second's position
+        float deltaX = relativePosition.x - lastEnemyPosition.x;
+        float deltaY = relativePosition.y - lastEnemyPosition.y;
+        print("DX:" + deltaX);
+        print("DY:" + deltaY);
+    
+        // Calculate vertical distance
+        float verticalDistance = relativePosition.x;
+        print("VD:" + verticalDistance);
+    
+        // Calculate time (vertical distance / bullet speed)
+        float time = fabs(verticalDistance / bulletSpeed);
+        print("Time:" + time);
+        float refreshTime = (1.0 / float(ai_aim_rate));
+    
+        // Calculate possible future coordinates
+        float futureX = relativePosition.x + (deltaX);
+        float futureY = relativePosition.y + (deltaY);
+        float futureZ = relativePosition.z; // Assume Z-axis coordinate remains unchanged
+        
+        print("Future:" + futureX + " | " + futureY + " | ");
+        print("Current:" + relativePosition.x + " | " + relativePosition.y + " | ");
+    
+        // Calculate planar distance
+        float triangleSideC = sqrt(futureX * futureX + futureY * futureY);
+    
+        // Calculate view angle (radians)
+        float viewAngleForwardYaw = atan(futureZ / triangleSideC) * (-1);
+        float viewAngleForwardPitch = atan(futureY / futureX);
+    
+        // Convert to degrees
+        float yawDegrees = viewAngleForwardYaw * 57.2957795;
+        float pitchDegrees = viewAngleForwardPitch * 57.2957795;
+    
+        // Adjust angle if the target is on the left
+        if (futureX < 0) {
+            if (pitchDegrees < 90 && pitchDegrees >= 0) {
+                pitchDegrees -= 180;
+            }
+            if (pitchDegrees > -90 && pitchDegrees < 0) {
+                pitchDegrees += 180;
+            }
+        }
+    
+        // Update enemy's current coordinates to last second's coordinates
+        lastEnemyPosition.x = relativePosition.x;
+        lastEnemyPosition.y = relativePosition.y;
+        lastEnemyPosition.z = relativePosition.z;
+    
+        vector temp;
+        temp.x = yawDegrees;
+        temp.y = pitchDegrees;
+        temp.z = 0;
+    
+        return temp;
+    }
+    
+    float yawDegrees = 0.0;
+    float pitchDegrees = 0.0;
+    vector temp;
+    temp.x = yawDegrees;
+    temp.y = pitchDegrees;
+    temp.z = 0;
+    
+    return temp;
+}
+
+
+// Function to apply view angle adjustment commands
+void function applyViewAngleCommands(float attackerYaw, float attackerPitch, float targetYaw, float targetPitch, int yawSpeed, int pitchSpeed)
+{
+    // Set movement speed
+    GetLocalClientPlayer().ClientCommand("cl_yawspeed " + yawSpeed);
+    GetLocalClientPlayer().ClientCommand("cl_pitchspeed " + pitchSpeed);
+
+    // View angle movement logic
+    if (attackerPitch < targetPitch)
+    {
+        GetLocalClientPlayer().ClientCommand("-right");
+        GetLocalClientPlayer().ClientCommand("+left");
+    }
+    else if (attackerPitch > targetPitch)
+    {
+        GetLocalClientPlayer().ClientCommand("-left");
+        GetLocalClientPlayer().ClientCommand("+right");
+    }
+
+    if (attackerYaw < targetYaw)
+    {
+        GetLocalClientPlayer().ClientCommand("-lookup");
+        GetLocalClientPlayer().ClientCommand("+lookdown");
+    }
+    else if (attackerYaw > targetYaw)
+    {
+        GetLocalClientPlayer().ClientCommand("-lookdown");
+        GetLocalClientPlayer().ClientCommand("+lookup");
+    }
+}
+
+// Updated aimCheck_did function
+void function aimCheck_did(entity attacker, entity victim)
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // Calculate common ratio q
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // Loop while aim assist is enabled and ai_enabled is true
+    while (aimOn && ai_enabled)
+    {
+        aimOn = true;
+        currentTarget = victim;
+
+        if(!IsValid(attacker) || !IsValid(victim))
+        {
+            continue;
+        }
+
+        // Calculate the relative position vector of the victim to the attacker
+        vector relativePosition = victim.GetOrigin() - attacker.GetOrigin();
+        vector targetAngles = calculateViewAngles(relativePosition);
+
+        // Get the current view angles
+        float attackerYaw = attacker.EyeAngles().x;
+        float attackerPitch = attacker.EyeAngles().y;
+
+        // Calculate the angle differences
+        float yawDifference = fabs(attackerPitch - targetAngles.y);
+        float pitchDifference = fabs(attackerYaw - targetAngles.x);
+
+        // Adjust speeds based on differences
+        if (yawDifference > 20.0)
+        {
+            currentYawSpeed = ai_aim_speed_search;
+            currentPitchSpeed = ai_aim_speed_search;
+        }
+        else if (yawDifference >= 1.0)
+        {
+            currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+            currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+        }
+        else
+        {
+            currentYawSpeed = 10;
+            currentPitchSpeed = 10;
+        }
+
+        // Call the function to apply view angle adjustment commands
+        applyViewAngleCommands(attackerYaw, attackerPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+
+        // End condition checks
+        if (!IsValid(victim) || attacker != GetLocalClientPlayer() || GetHealthFrac(victim) <= 0.0 || GetHealthFrac(attacker) <= 0.0 || attacker == victim || (victim.IsPlayer() == false && !lock_bot) || (victim.IsHuman() == false && !lock_titan))
+        {
+            aimOn = false;
+            currentTarget = null;
+            GetLocalClientPlayer().ClientCommand("-right");
+            GetLocalClientPlayer().ClientCommand("-left");
+            GetLocalClientPlayer().ClientCommand("-lookup");
+            GetLocalClientPlayer().ClientCommand("-lookdown");
+            // Initialize enemy coordinates
+            last_Enemy_Position_Init();
+            break;
+        }
+
+        // Wait for a certain time before continuing the loop
+        wait(1 / ai_aim_rate);
+    }
+}
+
+// Updated aimCheck_took function
+void function aimCheck_took(entity victim, entity attacker)
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // Calculate common ratio q
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // Loop while aim assist is enabled and ai_enabled is true
+    while (aimOn && ai_enabled)
+    {
+        aimOn = true;
+        isAttacking = true;
+        currentTarget = attacker;
+
+        if(!IsValid(attacker) || !IsValid(victim))
+        {
+            continue;
+        }
+
+        // Calculate the relative position vector of the attacker to the victim
+        vector relativePosition = attacker.GetOrigin() - victim.GetOrigin();
+        vector targetAngles = calculateViewAngles(relativePosition);
+
+        // Get the current view angles
+        float victimYaw = victim.EyeAngles().x;
+        float victimPitch = victim.EyeAngles().y;
+
+        // Calculate the angle differences
+        float yawDifference = fabs(victimPitch - targetAngles.y);
+        float pitchDifference = fabs(victimYaw - targetAngles.x);
+
+        // Adjust speeds based on differences
+        if (yawDifference > 20.0)
+        {
+            currentYawSpeed = ai_aim_speed_search;
+            currentPitchSpeed = ai_aim_speed_search;
+        }
+        else if (yawDifference >= 1.0)
+        {
+            currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+            currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+        }
+        else
+        {
+            currentYawSpeed = 10;
+            currentPitchSpeed = 10;
+        }
+
+        // Call the function to apply view angle adjustment commands
+        applyViewAngleCommands(victimYaw, victimPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+
+        // End condition checks
+        if (!IsValid(attacker) || GetHealthFrac(victim) <= 0.0 || GetHealthFrac(attacker) <= 0.0 || attacker == victim || (attacker.IsPlayer() == false && !lock_bot) || (attacker.IsHuman() == false && !lock_titan))
+        {
+            print("End of Aimbot");
+            aimOn = false;
+            isAttacking = false;
+            currentTarget = null;
+            GetLocalClientPlayer().ClientCommand("-right");
+            GetLocalClientPlayer().ClientCommand("-left");
+            GetLocalClientPlayer().ClientCommand("-lookup");
+            GetLocalClientPlayer().ClientCommand("-lookdown");
+            // Initialize enemy coordinates
+            last_Enemy_Position_Init();
+            break;
+        }
+
+        // Wait for a certain time before continuing the loop
+        wait(1 / ai_aim_rate);
+    }
+}
+
+
+// Define the aim_TriggerBot function for automatic shooting
+void function aim_TriggerBot()
+{
+    float meleeDistanceThreshold = 100; // Define the melee attack distance threshold (in meters)
+
+    // Infinite loop
+    while (true)
+    {
+        // Wait each frame
+        WaitFrame();
+        // If the local player exists
+        if (GetLocalClientPlayer() != null)
+        {
+            // Get the tracking result of the player's view
+            TraceResults results = GetViewTrace(GetLocalClientPlayer());
+
+            // If the hit entity is valid and is human
+            if (IsValid(results.hitEnt) && results.hitEnt.IsHuman())
+            {
+                // If the hit entity is a teammate, skip this iteration
+                if (results.hitEnt.GetTeam() == GetLocalClientPlayer().GetTeam())
+                {
+                    continue;
+                }
+
+                // Calculate the distance between the local player and the hit entity
+                vector localPlayerPosition = GetLocalClientPlayer().GetOrigin();
+                vector targetPosition = results.hitEnt.GetOrigin();
+                float distance = VectorDistance(localPlayerPosition, targetPosition);
+
+                if (distance <= meleeDistanceThreshold && auto_melee)
+                {
+                    // If the distance is below the threshold, perform a melee attack
+                    GetLocalClientPlayer().ClientCommand("+melee");
+                    wait(0.0);
+                    GetLocalClientPlayer().ClientCommand("-melee");
+                }
+                else if (ai_tb && !isShooting)
+                {
+                    // Otherwise, perform a shooting action
+                    GetLocalClientPlayer().ClientCommand("+attack");
+                    wait(0.0);
+                    GetLocalClientPlayer().ClientCommand("-attack");
+                }
+                else
+                {
+                    // Do nothing
+                }
+
+                // If the local player exists and currently has no weapon, skip this iteration
+                if (IsValid(GetLocalClientPlayer()) && GetLocalClientPlayer().GetActiveWeapon() == null)
+                {
+                    continue;
+                }
+
+                // If ai_ass_power is less than or equal to 0.0 or greater than 1.0, skip this iteration
+                if (ai_ass_power <= 0.0 || ai_ass_power > 1.0)
+                {
+                    continue;
+                }
+
+                // If ai_ass_power is between 0.0 and 1.0
+                if (ai_ass_power < 1.0 && ai_ass_power > 0.0)
+                {
+                    // If the local player exists and currently has a weapon
+                    if (IsValid(GetLocalClientPlayer()) && GetLocalClientPlayer().GetActiveWeapon() != null)
+                    {
+                        // Determine the shooting interval based on the weapon's maximum fire rate and ai_ass_power
+                        wait((1 / GetLocalClientPlayer().GetActiveWeapon().GetWeaponSettingFloat(eWeaponVar.fire_rate)) * (1 / ai_ass_power));
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Define the aimToggleOff function triggered when the shoot button is released
+void function stopAimbot(int buttonEnum)
+{
+    currentTarget = null;
+    aimOn = false;
+
+    // Stop all view movements
+    GetLocalClientPlayer().ClientCommand("-right");
+    GetLocalClientPlayer().ClientCommand("-left");
+    GetLocalClientPlayer().ClientCommand("-lookup");
+    GetLocalClientPlayer().ClientCommand("-lookdown");
+    // Initialize enemy coordinates
+    last_Enemy_Position_Init();
+}
+
+
+// Define the aim_AimAssist function
+void function aim_AimAssist()
+{
+    int currentYawSpeed;
+    int currentPitchSpeed;
+
+    // Calculate the ratio q to adjust speed
+    float q = pow(float(ai_aim_speed_aim) / float(ai_aim_speed_search), 1.0 / 19.0);
+
+    // Infinite loop to detect enemies the crosshair sweeps over
+    while (true)
+    {
+        // Wait each frame
+        WaitFrame();
+        // If the local player exists
+        if (GetLocalClientPlayer() != null)
+        {
+            // Only track a new target if the current target is invalid or dead
+            if (!IsValid(currentTarget) || GetHealthFrac(currentTarget) <= 0.0)
+            {
+                // Get the tracking result of the player's crosshair direction
+                TraceResults results = GetViewTrace(GetLocalClientPlayer());
+
+                // Check if the hit entity is valid and an enemy
+                if (IsValid(results.hitEnt) && results.hitEnt.GetTeam() != GetLocalClientPlayer().GetTeam())
+                {
+                    entity currentEntity = results.hitEnt;
+                    // Check target type: if not a player or titan
+                    if ((currentEntity.IsPlayer() == false && !lock_bot) || (currentEntity.IsHuman() == false && !lock_titan))
+                    {
+                        // If the current target does not meet the lock criteria, skip this iteration
+                        currentTarget = null;
+                        aimOn = false;
+
+                        // Stop all view movements
+                        GetLocalClientPlayer().ClientCommand("-right");
+                        GetLocalClientPlayer().ClientCommand("-left");
+                        GetLocalClientPlayer().ClientCommand("-lookup");
+                        GetLocalClientPlayer().ClientCommand("-lookdown");
+                        // Initialize enemy coordinates
+                        last_Enemy_Position_Init();
+
+                        // Skip tracking logic and wait
+                        wait(1 / ai_aim_rate);
+                        continue;
+                    }
+
+                    // If conditions are met, update the current target
+                    currentTarget = currentEntity;
+                }
+                else
+                {
+                    // If no valid target found, clear the target and skip the current frame
+                    currentTarget = null;
+                    aimOn = false;
+
+                    // Stop all view movements
+                    GetLocalClientPlayer().ClientCommand("-right");
+                    GetLocalClientPlayer().ClientCommand("-left");
+                    GetLocalClientPlayer().ClientCommand("-lookup");
+                    GetLocalClientPlayer().ClientCommand("-lookdown");
+                    // Initialize enemy coordinates
+                    last_Enemy_Position_Init();
+                    wait(1 / ai_aim_rate);
+                    continue;
+                }
+            }
+
+            // If there is a valid target
+            if (IsValid(currentTarget))
+            {
+                print("Tracking");
+
+                // Get the positions of the player and the target
+                vector playerPosition = GetLocalClientPlayer().GetOrigin();
+                vector targetPosition = currentTarget.GetOrigin();
+
+                // Calculate the relative position between player and target
+                if (targetPosition.x != 0 || targetPosition.y != 0 || targetPosition.z != 0)
+                {
+                    vector relativePosition = targetPosition - playerPosition;
+                    vector targetAngles = calculateViewAngles(relativePosition);
+
+                    // Get the current view angles
+                    float playerYaw = GetLocalClientPlayer().EyeAngles().x;
+                    float playerPitch = GetLocalClientPlayer().EyeAngles().y;
+
+                    // Calculate the angle differences
+                    float yawDifference = fabs(playerPitch - targetAngles.y);
+                    float pitchDifference = fabs(playerYaw - targetAngles.x);
+
+                    // Adjust speed based on angle differences
+                    if (yawDifference > 20.0)
+                    {
+                        currentYawSpeed = ai_aim_speed_search;
+                        currentPitchSpeed = ai_aim_speed_search;
+                    }
+                    else if (yawDifference >= 1.0)
+                    {
+                        currentYawSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+                        currentPitchSpeed = int(floor(ai_aim_speed_search * pow(q, 20 - yawDifference)));
+                    }
+                    else
+                    {
+                        currentYawSpeed = 10;
+                        currentPitchSpeed = 10;
+                    }
+
+                    // Call the function to apply view angle adjustments
+                    applyViewAngleCommands(playerYaw, playerPitch, targetAngles.x, targetAngles.y, currentYawSpeed, currentPitchSpeed);
+                }
+            }
+            else
+            {
+                // If there is no valid target, reset the state
+                aimOn = false;
+                currentTarget = null;
+
+                // Stop all view movements
+                GetLocalClientPlayer().ClientCommand("-right");
+                GetLocalClientPlayer().ClientCommand("-left");
+                GetLocalClientPlayer().ClientCommand("-lookup");
+                GetLocalClientPlayer().ClientCommand("-lookdown");
+                // Initialize enemy coordinates
+                last_Enemy_Position_Init();
+            }
+
+            // Wait for a certain time before continuing the loop
+            wait(1 / ai_aim_rate);
+        }
+    }
+}
+
+/*
+
+    OvO-Aimbot!
+    
+*/

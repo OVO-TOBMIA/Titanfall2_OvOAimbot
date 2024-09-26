@@ -1,0 +1,55 @@
+{
+    "Name": "OvO Aimbot",
+    "Description": "An open-source cheat for Titanfall 2, suitable for official servers and Northstar, featuring aimbot, wallhack, auto-melee, and assist mark functionalities",
+    "Version": "0.0.1",
+
+    "LoadPriority": "0",
+    "ConVars": [
+		{
+			"Name": "ai_enabled",
+			"DefaultValue": "1"  
+		},
+		{
+			"Name": "ai_aim_rate",
+			"DefaultValue": "500" 
+		},
+		{
+			"Name": "ai_aim_speed_search",
+			"DefaultValue": "10000"  
+		},
+		{
+			"Name": "ai_aim_speed_aim",
+			"DefaultValue": "100"  
+		},
+		{
+			"Name": "ai_tb",
+			"DefaultValue": "1"  
+		},
+		{
+			"Name": "ai_ass_power",
+			"DefaultValue": "1.0"  
+		},
+		{
+			"Name": "auto_melee",
+			"DefaultValue": "1"  
+		},
+		{
+			"Name": "lock_bot",
+			"DefaultValue": "1"  
+		},
+		{
+			"Name": "lock_titan",
+			"DefaultValue": "1"  
+		}
+	],
+
+    "Scripts": [
+        {
+            "Path": "aim.gnut",
+            "RunOn": "CLIENT && MP",
+            "ClientCallback": {
+                "After": "aim_Init"
+            }
+        }
+    ]
+}
