@@ -1,4 +1,4 @@
-![屏幕截图 2024-09-26 111632](https://github.com/user-attachments/assets/a64e46bb-866b-45c5-9285-5b142d278798)![屏幕截图 2024-09-26 111247](https://github.com/user-attachments/assets/dd6bd78c-3eaa-4637-9f2a-b2ecbfac23d9)# Language
+# Language
 [English](#Titanfall2_OvO_Aimbot) | [简体中文](#Titanfall2_OvO_Aimbot_简体中文)
 
 # Titanfall2_OvO_Aimbot
