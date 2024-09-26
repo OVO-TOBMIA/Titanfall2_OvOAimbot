@@ -1,4 +1,4 @@
-# Language
+![屏幕截图 2024-09-26 111632](https://github.com/user-attachments/assets/a64e46bb-866b-45c5-9285-5b142d278798)![屏幕截图 2024-09-26 111247](https://github.com/user-attachments/assets/dd6bd78c-3eaa-4637-9f2a-b2ecbfac23d9)# Language
 [English](#Titanfall2_OvO_Aimbot) | [简体中文](#Titanfall2_OvO_Aimbot_简体中文)
 
 # Titanfall2_OvO_Aimbot
@@ -21,12 +21,13 @@ This is an aimbot developed based on the Titanfall 2 game API, suitable for Nort
 - Auto melee `auto_melee`: Automatically melee attacks when the target is within your view and less than 100 units away (distance can be modified, see development instructions)  
 - Optional lock `lock_bot/lock_titan`: Optional to lock Titan or minion objects,which may cause bugs and has not been debugged.  
 - Cloaking highlight `draw_clock`: Highlight all cloaked objects
-- ![image](https://github.com/user-attachments/assets/5b6c76d9-c7ef-46c6-9e64-b73cccddaa01)
+- ![IMAGE](https://github.com/user-attachments/assets/f3632bf6-6838-4a2d-a551-f361f61ea09e)
 - FOV modification `player_fov`: Modify your FOV limit to make your movements appear faster and smoother
-- ![image](https://github.com/user-attachments/assets/2ac24e98-f31b-44c0-906a-f504a6d53c42)
+- ![IMAGE](https://github.com/user-attachments/assets/0ccce961-ff69-4c84-ae65-2df7553c9f2e)
 - Quick scoping: The time to scope in supported weapons is reduced to 0.1 seconds  
 - Smart pistol marking: Use a red box to mark enemies that appear within your field of view for supported weapons
-- ![image](https://github.com/user-attachments/assets/8ddf3cfc-986d-4660-bec2-4294cc3eb84f)
+- ![IMAGE](https://github.com/user-attachments/assets/fe95d10e-caeb-40d5-97d5-f691e641677e)
+
 
 
 ### Supported Weapons for Quick Scoping & Marking
@@ -112,12 +113,12 @@ This is an aimbot developed based on the Titanfall 2 game API, suitable for Nort
 - 自动近战 `auto_melee`：在目标在你视野内且距离你小于100个单位时，自动近战对方（距离可修改，见开发说明）  
 - 可选锁定 `lock_bot/lock_titan`：可选是否锁定泰坦对象/小兵对象，可能造成bug，未调试  
 - 隐身高亮 `draw_clock`：高亮所有隐身对象
-- ![image](https://github.com/user-attachments/assets/5b6c76d9-c7ef-46c6-9e64-b73cccddaa01)
+- ![IMAGE](https://github.com/user-attachments/assets/f3632bf6-6838-4a2d-a551-f361f61ea09e)
 - FOV修改 `player_fov`：修改你的FOV上限，使得你的移动看起来更快更流畅
-- ![image](https://github.com/user-attachments/assets/2ac24e98-f31b-44c0-906a-f504a6d53c42)
+- ![IMAGE](https://github.com/user-attachments/assets/0ccce961-ff69-4c84-ae65-2df7553c9f2e)
 - 快速开镜：支持的武器开关镜时间缩短为0.1  
 - 智慧手枪标注：支持的武器对视野内出现的敌人使用智慧手枪的红色框标记
-- ![image](https://github.com/user-attachments/assets/8ddf3cfc-986d-4660-bec2-4294cc3eb84f)
+- ![IMAGE](https://github.com/user-attachments/assets/fe95d10e-caeb-40d5-97d5-f691e641677e)
 
 
 ### 快速开镜&标注 支持的武器
