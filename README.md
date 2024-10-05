@@ -85,7 +85,11 @@ This is an aimbot developed based on the Titanfall 2 game API, suitable for Nort
     - Parameter script: Reference `smart_aim_base.txt` in the corresponding directory and copy the required parameters into the existing weapon.txt parameter script  
 - VPK unpacker: [HarmonyVPKTool](https://github.com/harmonytf/HarmonyVPKTool)  
 - VPK packer: [RSPNVPK](https://github.com/taskinoz/RSPNVPK)  
-- API function DUMP documentation: [Titanfall2-ModdingDocumentation](https://github.com/ScureX/Titanfall2-ModdingDocumentation)  
+- API function DUMP documentation: [Titanfall2-ModdingDocumentation](https://github.com/ScureX/Titanfall2-ModdingDocumentation)
+
+## Other Free Titanfall2 Aimbots
+- [Titanfall2ExternalCheat](https://www.unknowncheats.me/forum/titanfall/469406-titanfall-2-external-cheat-aimbot-esp.html) : Free, no virus, but not open-source, aim assist supports both horizontal/vertical axis, and supports wallhack.
+- [Titanfall2ESP](https://www.unknowncheats.me/forum/titanfall/192555-titanfall-2-esp.html): Free, no virus, but not open-source, with wall hack, less functional, need injector
 
 ## Reference Projects
 - [LiteralAimbot](https://github.com/Titanfall2-T/LiteralAimbot)  
@@ -176,8 +180,12 @@ This is an aimbot developed based on the Titanfall 2 game API, suitable for Nort
     - 参数脚本：参考对应目录中的`smart_aim_base.txt`并将对应的参数按要求复制到已有的武器.txt参数脚本内  
 - VPK解包器：[HarmonyVPKTool](https://github.com/harmonytf/HarmonyVPKTool)  
 - VPK打包器：[RSPNVPK](https://github.com/taskinoz/RSPNVPK)  
-- API函数DUMP文档：[Titanfall2-ModdingDocumentation](https://github.com/ScureX/Titanfall2-ModdingDocumentation)  
+- API函数DUMP文档：[Titanfall2-ModdingDocumentation](https://github.com/ScureX/Titanfall2-ModdingDocumentation)
 
+## 其他免费泰坦陨落2辅助
+- [Titanfall2ExternalCheat](https://www.unknowncheats.me/forum/titanfall/469406-titanfall-2-external-cheat-aimbot-esp.html) ：免费，无毒，但不开源，自瞄功能支持横/纵轴，支持透视
+- [Titanfall2ESP](https://www.unknowncheats.me/forum/titanfall/192555-titanfall-2-esp.html): 免费，无毒，但不开源，支持透视，功能较少，需要自行注入
+  
 ## 参考项目
 - [LiteralAimbot](https://github.com/Titanfall2-T/LiteralAimbot)  
 - [RSPNVPK](https://github.com/taskinoz/RSPNVPK)  
