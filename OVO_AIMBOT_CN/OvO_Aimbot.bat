@@ -18,6 +18,9 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+REM 复制vpk文件到vpk_editor文件夹内
+copy /y vpk\englishclient_mp_common.bsp.pak000_dir.vpk vpk_editor\
+
 REM 执行RSPNVPK命令
 cd vpk_editor
 RSPNVPK.exe englishclient_mp_common.bsp.pak000_dir.vpk
